@@ -10,7 +10,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Conve
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv("../.env")
 
 TOKEN = os.getenv("TOKEN")
 PATH = "./log/postgresql.log"
