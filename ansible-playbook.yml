@@ -1,0 +1,36 @@
+- name: general_settings
+  hosts: db_hosts
+  become: yes
+  become_method: sudo
+
+  tasks:
+    - name: "Install general packages"
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ db_packages }}"
+
+    - name: "Settings master"
+      import_tasks: task-master.yml
+      when: "'db_master' in group_names"
+
+    - name: "Settings slave"
+      import_tasks: task-slave.yml
+      when: "'db_slave' in group_names"
+
+    - name: "download and start bot"
+      import_tasks: bot.yml
+      when: "'db_master' in group_names"
+      become_user: "{{ ansible_user }}"
+
+    - name: "Start Bot"
+      shell:
+        chdir: /home/aminchikovvo/bot
+        cmd: "../venv/bin/python Bot.py >/dev/null 2>&1 &"
+      when: "'db_master' in group_names"
+
+  handlers:
+    - name: Restart db
+      systemd:
+        state: restarted
+        name: postgresql

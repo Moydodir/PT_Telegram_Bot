@@ -1,0 +1,16 @@
+- name: "Clone git"
+  git:
+    repo: https://github.com/Moydodir/PT_Telegram_Bot.git
+    dest: /home/aminchikovvo/bot/
+    version: bot
+
+- name: "Activate Environment"
+  pip:
+    requirements: /home/aminchikovvo/bot/requirements.txt
+    virtualenv: /home/aminchikovvo/venv
+
+- name: "Copy .env"
+  copy:
+    src: ./.env
+    dest: /home/aminchikovvo/bot/
+
