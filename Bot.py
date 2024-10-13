@@ -3,17 +3,15 @@ import os
 import re
 import paramiko
 import psycopg2
-import subprocess
 
 from telegram import Update, ForceReply, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackQueryHandler
 
 from dotenv import load_dotenv
 
-load_dotenv("../.env")
+load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
-PATH = "./log/postgresql.log"
 
 # Подключаем логирование
 logging.basicConfig(
@@ -23,11 +21,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def connection(command):
-    host = os.getenv('RM_HOST')
-    port = os.getenv('RM_PORT')
-    username = os.getenv('RM_USER')
-    password = os.getenv('RM_PASSWORD')
+def connection(command, host=os.getenv('RM_HOST'), port=os.getenv('RM_PORT'), username=os.getenv('RM_USER'),
+               password=os.getenv('RM_PASSWORD')):
 
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -36,6 +31,7 @@ def connection(command):
     data = stdout.read() + stderr.read()
     client.close()
     data = str(data).replace('\\n', '\n').replace('\\t', '\t')[2:-1]
+    print(data)
     return data
 
 
@@ -47,7 +43,7 @@ def connect_to_db(table, query='select', new_values=None, field_name=None, ins_t
     db_port = os.getenv('DB_PORT')
     db_name = os.getenv('DB_DATABASE')
 
-    connection = None
+    # connection = None
     answer = None
     cursor = None
     try:
@@ -198,15 +194,19 @@ def get_repl_logsCommand(update: Update, context):
 
     get_repl_logs(update, context)
 
+
 def get_emailsCommand(update: Update, context):
     update.message.reply_text('подключение к postgresql')
 
     get_emails(update, context)
 
+
 def get_phone_numbersCommand(update: Update, context):
     update.message.reply_text('подключение к postgresql')
 
     get_phone_numbers(update, context)
+
+
 def button(update, context):
     global formatted_numbers
     query = update.callback_query
@@ -221,6 +221,7 @@ def button(update, context):
         query.edit_message_text(text=result)
     elif query.data == '2':
         query.edit_message_text(text="Данные не вставлены")
+
 
 def findPhoneNumbers(update: Update, context):
     global formatted_numbers, ins_type
@@ -293,6 +294,7 @@ def get_emails(update: Update, context):
     update.message.reply_text(connect_to_db('mail_address'))
     update.message.reply_text('Обработка завершена')
     return ConversationHandler.END
+
 
 def get_phone_numbers(update: Update, context):
     update.message.reply_text('Обработка')
@@ -424,10 +426,10 @@ def get_apt_list(update: Update, context):
 
 
 def get_repl_logs(update, context):
-    output = subprocess.run(["tail", PATH], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    output = output.stdout + output.stderr
+    #command = "echo '1' | sudo -S -u postgres -i bash -c 'grep \"replication\" /var/log/postgresql/postgresql-15-main.log' | tail"
+    command = "tail /var/log/postgresql/postgresql-15-main.log"
     update.message.reply_text('Обработка')
-    update.message.reply_text(output)
+    update.message.reply_text(connection(command, host=os.getenv("DB_HOST")))
     update.message.reply_text('Обработка завершена')
     return ConversationHandler.END
 
@@ -452,8 +454,6 @@ def main():
         },
         fallbacks=[]
     )
-
-
 
     convHandlerFindMail = ConversationHandler(
         entry_points=[CommandHandler('findMail', findMailCommand)],
@@ -599,7 +599,6 @@ def main():
         fallbacks=[]
     )
 
-
     # Регистрируем обработчики команд
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", helpCommand))
@@ -622,7 +621,6 @@ def main():
     dp.add_handler(convHandlerGetReplLogs)
     dp.add_handler(convHandlerGetEmails)
     dp.add_handler(convHandlerGetPhoneNumbers)
-
 
     # Регистрируем обработчик текстовых сообщений
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
