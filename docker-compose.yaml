@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - db
+    volumes: 
+      - 'logs:/app/log'
+    networks:
+      - mynetwork
+
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+      USERNAME_BD_REPL: ${DB_REPL_USER}
+      PASSWORD_REPL: ${DB_REPL_PASSWORD}
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256\nhost replication all 0.0.0.0/0 md5"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - './db/init.sh:/docker-entrypoint-initdb.d/init.sh'
+      - 'logs:/log/replication'
+    command: >
+       postgres -c "archive_mode=on" -c "archive_command=cp %p /var/lib/postgresql/WAL/archive/%f" 
+       -c "max_wal_senders=10" -c "wal_level=replica" -c "wal_log_hints=on"
+       -c "logging_collector=on" -c "log_directory=/log/replication" -c "log_filename=postgresql.log"
+    networks:
+      - mynetwork
+
+  db_replica:
+    user: postgres
+    build:
+      context: ./replica
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_USER: ${DB_REPL_USER}
+      POSTGRES_PASSWORD: ${DB_REPL_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+      PGPORT: ${DB_REPL_PORT}
+    entrypoint: ["/bin/bash", "-c"]
+    command: "var/lib/postgresql/start_script.sh"
+    depends_on:
+      - db
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge
+
+volumes:
+  db_data:
+  logs:
+  
