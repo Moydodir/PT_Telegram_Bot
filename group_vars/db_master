@@ -1,0 +1,24 @@
+---
+ansible_host: "{{ ansible_master_host }}"
+ansible_user:
+ansible_password:
+ansible_become_pass:
+
+DB_NAME:
+USER_NAME:
+PASSWORD_USER:
+
+
+### packages
+
+packages:
+  - libpq-dev
+  - python3-dev
+  - build-essential
+  - python3-full
+  - virtualenv
+  - python3-psycopg2
+  - git
+
+
+path_log: "/var/log/postgresql/postgresql-15-main.log"

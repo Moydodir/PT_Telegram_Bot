@@ -1,0 +1,10 @@
+---
+ansible_host: "{{ ansible_repl_host }}"
+ansible_user:
+ansible_password:
+ansible_become_pass:
+
+### settings slave
+
+pgpass: "/var/lib/postgresql/.pgpass"
+main_postgres: "/var/lib/postgresql/15/main"

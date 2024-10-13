@@ -1,0 +1,16 @@
+user_replication: 
+password_replication: 
+ansible_repl_host: 
+ansible_master_host: 
+PORT: 5432
+
+### parameters for packages
+
+db_packages:
+  - postgresql-15
+  - postgresql-contrib
+  - net-tools
+
+### settings for packages
+
+path_hba: /etc/postgresql/15/main/pg_hba.conf
